@@ -1,0 +1,279 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  UserID    String    @id @default(cuid())
+  Email     String    @unique
+  Password  String
+  FirstName String
+  LastName  String
+  Address   Address[] // one-to-many relation
+  Bill      Bill[] // one-to-many relation
+  Orders    Order[] // one-to-many relation
+  Reviews   Review[] // one-to-many relation
+  Wishlist  Wishlist? // one-to-one relation
+  Cart      Cart? // one-to-one relation
+  isAdmin   Boolean   @default(false)
+  AppliedDiscounts UserDiscountUsage[]
+
+  @@index([Email])
+
+}
+
+model Address {
+  AddressID  String  @id @default(cuid())
+  FirstLine  String?
+  SecondLine String?
+  Street     String?
+  City       String
+  State      String
+  Country    String  @default("India")
+  Pincode    Int
+  AddressFor String
+
+  UserID String
+  User   User   @relation(fields: [UserID], references: [UserID]) // many-to-one relation
+
+  Bill  Bill[] // one-to-many relation
+  Order Order[] // one-to-many relation
+
+  @@unique([UserID])
+}
+
+model Order {
+  OrderID     String   @id @default(cuid())
+  TotalAmount Float
+  Date        DateTime
+  Status      String   @default("Pending")
+
+  UserID String
+  User   User   @relation(fields: [UserID], references: [UserID])
+
+  Products OrderProduct[]
+
+  DestinationAddressID String
+  DestinationAddress   Address @relation(fields: [DestinationAddressID], references: [AddressID])
+
+  BillID String @unique
+  Bill   Bill  @relation(fields: [BillID], references: [BillID])
+
+  @@unique([OrderID])
+  @@index([OrderID, UserID])
+}
+
+model Bill {
+  BillID        String   @id @default(cuid())
+  TotalAmount   Float
+  Date          DateTime
+  PaymentMethod String
+
+  UserID String
+  User   User   @relation(fields: [UserID], references: [UserID])
+
+  BillingAddressID String
+  BillingAddress   Address @relation(fields: [BillingAddressID], references: [AddressID])
+
+  Order Order?
+
+
+  DiscountHistory DiscountHistory[]
+
+  @@index([UserID])
+}
+
+model Product {
+  ProductID       String            @id @default(cuid())
+  Name            String
+  Description     String
+  Price           Float
+  Image           String[]
+  Inventory       Int
+  Category        ProductCategory[]
+  BrandID         String
+  Brand           Brand             @relation(fields: [BrandID], references: [BrandID])
+  Reviews         Review[]
+  OrderProducts   OrderProduct[]
+  CartItems       CartItem[]
+  Wishlist        Wishlist[]
+  ProductDiscount ProductDiscount[]
+
+  @@index([Name])
+}
+
+model Cart {
+  CartID String @id @default(cuid())
+
+  UserID String @unique
+  User   User   @relation(fields: [UserID], references: [UserID])
+
+  CartItems   CartItem[]
+  TotalAmount Float
+}
+
+model CartItem {
+  CartItemID String @id @default(cuid())
+
+  CartID String
+  Cart   Cart   @relation(fields: [CartID], references: [CartID])
+
+  ProductID String
+  Product   Product @relation(fields: [ProductID], references: [ProductID])
+
+  Quantity Int
+}
+
+model Category {
+  CategoryID  String             @id @default(cuid())
+  Name        String
+  Description String
+  Products    ProductCategory[]
+  Discount    CategoryDiscount[]
+
+  @@index([Name])
+}
+
+model ProductCategory {
+  ProductID  String
+  CategoryID String
+
+  Product  Product  @relation(fields: [ProductID], references: [ProductID])
+  Category Category @relation(fields: [CategoryID], references: [CategoryID])
+
+  @@id([ProductID, CategoryID])
+}
+
+model OrderProduct {
+  OrderID   String
+  ProductID String
+  Order     Order   @relation(fields: [OrderID], references: [OrderID])
+  Product   Product @relation(fields: [ProductID], references: [ProductID])
+
+  @@id([OrderID, ProductID])
+}
+
+model Brand {
+  BrandID     String          @id @default(cuid())
+  Name        String
+  Description String
+  Products    Product[]
+  Discount    BrandDiscount[]
+
+  @@index([Name])
+}
+
+model Review {
+  ReviewID  String   @id @default(cuid())
+  ProductID String
+  Rating    Int
+  Review    String
+  Date      DateTime
+
+  UserID String
+  User   User   @relation(fields: [UserID], references: [UserID])
+
+  Product Product @relation(fields: [ProductID], references: [ProductID])
+
+  @@unique([UserID, ProductID])
+}
+
+model Wishlist {
+  WishlistID String @id @default(cuid())
+
+  UserID   String    @unique
+  User     User      @relation(fields: [UserID], references: [UserID])
+  Products Product[]
+}
+
+model Discount {
+  DiscountID  String             @id @default(cuid())
+  Code        String             @unique
+  Description String
+  Percentage  Float
+  StartDate   DateTime
+  EndDate     DateTime
+  Products    ProductDiscount[]
+  Categories  CategoryDiscount[]
+  Brand       BrandDiscount[]
+  AppliedUsers UserDiscountUsage[]
+  DiscountHistory DiscountHistory[]
+
+  @@index([Code])
+}
+
+model CategoryDiscount {
+  CategoryDiscountID String @id @default(cuid())
+
+  CategoryID String
+  Category   Category @relation(fields: [CategoryID], references: [CategoryID])
+
+  DiscountID String
+  Discount   Discount @relation(fields: [DiscountID], references: [DiscountID])
+
+  @@unique([CategoryID, DiscountID])
+}
+
+model ProductDiscount {
+  ProductDiscountID String @id @default(cuid())
+
+  ProductID String
+  Product   Product @relation(fields: [ProductID], references: [ProductID])
+
+  DiscountID String
+  Discount   Discount @relation(fields: [DiscountID], references: [DiscountID])
+
+  @@unique([ProductID, DiscountID])
+}
+
+model BrandDiscount {
+  BrandDiscountID String @id @default(cuid())
+
+  BrandID String
+  Brand   Brand  @relation(fields: [BrandID], references: [BrandID])
+
+  DiscountID String
+  Discount   Discount @relation(fields: [DiscountID], references: [DiscountID])
+
+  @@unique([BrandID, DiscountID])
+}
+
+
+model UserDiscountUsage {
+  UserDiscountUsageID String @id @default(cuid())
+  
+  UserID String
+  User   User   @relation(fields: [UserID], references: [UserID])
+  
+  DiscountID String
+  Discount   Discount @relation(fields: [DiscountID], references: [DiscountID])
+
+  UsedCount Int @default(0)
+
+  @@unique([UserID, DiscountID])
+}
+
+
+model DiscountHistory {
+  DiscountHistoryID String @id @default(cuid())
+  DiscountCode      String
+  DiscountAmount    Float
+  AppliedDate       DateTime
+
+  BillID    String
+  Bill      Bill     @relation(fields: [BillID], references: [BillID])
+  
+  DiscountID String
+  Discount   Discount @relation(fields: [DiscountID], references: [DiscountID])
+}
