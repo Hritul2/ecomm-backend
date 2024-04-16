@@ -4,7 +4,7 @@ CREATE TABLE "User" (
     "Email" TEXT NOT NULL,
     "Password" TEXT NOT NULL,
     "FirstName" TEXT NOT NULL,
-    "LastName" TEXT NOT NULL,
+    "LastName" TEXT,
     "isAdmin" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("UserID")
@@ -21,6 +21,7 @@ CREATE TABLE "Address" (
     "Country" TEXT NOT NULL DEFAULT 'India',
     "Pincode" INTEGER NOT NULL,
     "AddressFor" TEXT NOT NULL,
+    "DelliveryPhone" TEXT NOT NULL,
     "UserID" TEXT NOT NULL,
 
     CONSTRAINT "Address_pkey" PRIMARY KEY ("AddressID")

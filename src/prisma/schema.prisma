@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql"//"postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -19,7 +19,7 @@ model User {
   Email     String    @unique
   Password  String
   FirstName String
-  LastName  String
+  LastName  String?
   Address   Address[] // one-to-many relation
   Bill      Bill[] // one-to-many relation
   Orders    Order[] // one-to-many relation
@@ -43,6 +43,7 @@ model Address {
   Country    String  @default("India")
   Pincode    Int
   AddressFor String
+  DelliveryPhone String
 
   UserID String
   User   User   @relation(fields: [UserID], references: [UserID]) // many-to-one relation
