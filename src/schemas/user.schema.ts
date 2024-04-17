@@ -1,6 +1,16 @@
 // user.schema.ts
 import { z } from "zod";
 
+export const userSchema = z
+    .object({
+        UserID: z.string(),
+        Email: z.string().email(),
+        FirstName: z.string(),
+        LastName: z.string().optional(),
+    })
+    .strict();
+
+export type User = z.infer<typeof userSchema>;
 // user register schema
 export const registerUserSchema = z
     .object({

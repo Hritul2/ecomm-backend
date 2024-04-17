@@ -1,4 +1,4 @@
-import { JwtPayload } from "jsonwebtoken";
+// user.controller.ts contains the user controller functions for registering and logging in users.
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
@@ -9,7 +9,7 @@ import {
     RegisterUser,
     LoginUser,
 } from "../schemas/user.schema";
-import { hashPassword, comparePassword } from "../helper/hashPassword";
+import { hashPassword, compareHash } from "../helper/hashPassword";
 import {
     generateAccessToken,
     generateRefreshToken,
@@ -40,11 +40,16 @@ const registerUser = asyncHandler(async (req, res) => {
             Password: hashedPassword,
         },
     });
-    const sanitizedUser = { ...newUser, Password: undefined };
+    const sanitizedUser = {
+        ...newUser,
+        Password: undefined,
+    };
 
-    res.status(201).json(
-        new ApiResponse(201, sanitizedUser, "User registered successfully")
-    );
+    return res
+        .status(201)
+        .json(
+            new ApiResponse(201, sanitizedUser, "User registered successfully")
+        );
 });
 
 // loginUser
@@ -60,14 +65,13 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid email or password");
     }
 
-    const isPasswordMatch = await comparePassword(password, user.Password);
+    const isPasswordMatch = await compareHash(password, user.Password);
     if (!isPasswordMatch) {
         throw new ApiError(400, "Invalid email or password");
     }
 
     const accessToken = generateAccessToken(user.UserID);
     const refreshToken = generateRefreshToken(user.UserID);
-
     const hashedRefreshToken = await hashPassword(refreshToken);
 
     await prisma.user.update({
@@ -87,20 +91,15 @@ const loginUser = asyncHandler(async (req, res) => {
 
     res.cookie("refreshToken", refreshToken, cookieOptions);
     res.cookie("accessToken", accessToken, cookieOptions);
-    res.status(200).json(new ApiResponse(200, null, "Login successful"));
+    return res.status(200).json(new ApiResponse(200, null, "Login successful"));
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
     try {
-        const payload: JwtPayload = verifyAccessToken(
-            req.cookies.accessToken
-        ) as JwtPayload;
-
-        if (!payload.userId) {
-            throw new ApiError(401, "Invalid access token");
+        const { userId } = req.body;
+        if (!userId) {
+            throw new ApiError(400, "User ID is required");
         }
-
-        const { userId } = payload;
 
         await prisma.user.update({
             where: {
@@ -115,22 +114,6 @@ const logoutUser = asyncHandler(async (req, res) => {
         res.clearCookie("accessToken");
         res.status(200).json(new ApiResponse(200, null, "Logout successful"));
     } catch (error: any) {
-        console.error("Error logging out:", error);
-
-        // Handle token verification errors
-        if (error.name === "TokenExpiredError") {
-            return res
-                .status(401)
-                .json(new ApiResponse(401, {}, "Access token has expired"));
-        }
-
-        if (error.name === "JsonWebTokenError") {
-            return res
-                .status(401)
-                .json(new ApiResponse(401, {}, "Invalid access token"));
-        }
-
-        // For any other unexpected errors
         throw new ApiError(500, "Internal Server Error");
     }
 });
