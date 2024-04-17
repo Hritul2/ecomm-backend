@@ -17,7 +17,13 @@ app.use(
 app.use(express.static("public"));
 
 import userRouter from "./routes/user.route";
+import { errorHandler } from "./middlewares/errorHandler";
 
+app.get("/", (req, res) => {
+    res.send("Hello World");
+});
 app.use("/api/v1/users", userRouter);
+
+app.use(errorHandler);
 
 export default app;
