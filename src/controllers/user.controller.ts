@@ -13,7 +13,6 @@ import { hashPassword, compareHash } from "../helper/hashPassword";
 import {
     generateAccessToken,
     generateRefreshToken,
-    verifyAccessToken,
 } from "../helper/tokenHelper";
 
 // Register new user
@@ -62,7 +61,8 @@ const loginUser = asyncHandler(async (req, res) => {
     });
 
     if (!user) {
-        throw new ApiError(400, "Invalid email or password");
+        // console.log("Invalid email or password");
+        throw new ApiError(400, "Invalid email or password", [], "");
     }
 
     const isPasswordMatch = await compareHash(password, user.Password);
@@ -70,8 +70,11 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid email or password");
     }
 
-    const accessToken = generateAccessToken(user.UserID);
-    const refreshToken = generateRefreshToken(user.UserID);
+    const accessToken = generateAccessToken({
+        userId: user.UserID,
+        email: user.Email,
+    });
+    const refreshToken = generateRefreshToken({ userId: user.UserID });
     const hashedRefreshToken = await hashPassword(refreshToken);
 
     await prisma.user.update({
@@ -91,6 +94,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
     res.cookie("refreshToken", refreshToken, cookieOptions);
     res.cookie("accessToken", accessToken, cookieOptions);
+
     return res.status(200).json(new ApiResponse(200, null, "Login successful"));
 });
 
