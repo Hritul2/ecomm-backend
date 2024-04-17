@@ -2,6 +2,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { errorHandler } from "./middlewares/errorHandler";
 
 const app = express();
 
@@ -17,7 +18,6 @@ app.use(
 app.use(express.static("public"));
 
 import userRouter from "./routes/user.route";
-import { errorHandler } from "./middlewares/errorHandler";
 
 app.get("/", (req, res) => {
     res.send("Hello World");

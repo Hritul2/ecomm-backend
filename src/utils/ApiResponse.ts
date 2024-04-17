@@ -1,3 +1,4 @@
+//ApiResponse.ts
 class ApiResponse<T> {
     statusCode: number;
     data: T;
