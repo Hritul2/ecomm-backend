@@ -20,14 +20,28 @@ model User {
   Password  String
   FirstName String
   LastName  String?
+  RefreshToken String? 
+
   Address   Address[] // one-to-many relation
   Bill      Bill[] // one-to-many relation
   Orders    Order[] // one-to-many relation
   Reviews   Review[] // one-to-many relation
   Wishlist  Wishlist? // one-to-one relation
   Cart      Cart? // one-to-one relation
-  isAdmin   Boolean   @default(false)
   AppliedDiscounts UserDiscountUsage[]
+
+  @@index([Email])
+
+}
+
+model Admin{
+  AdminID String @id @default(cuid())
+  Email String @unique
+  Password String
+  PhoneNumber String
+  FirstName String
+  LastName String
+  RefreshToken String?
 
   @@index([Email])
 
