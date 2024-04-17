@@ -65,15 +65,17 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid email or password");
     }
 
-    const accessToken = await generateAccessToken(user.UserID);
-    const refreshToken = await generateRefreshToken(user.UserID);
+    const accessToken = generateAccessToken(user.UserID);
+    const refreshToken = generateRefreshToken(user.UserID);
+
+    const hashedRefreshToken = await hashPassword(refreshToken);
 
     await prisma.user.update({
         where: {
             UserID: user.UserID,
         },
         data: {
-            RefreshToken: refreshToken,
+            RefreshToken: hashedRefreshToken,
         },
     });
 
