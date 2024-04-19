@@ -1,5 +1,6 @@
 // tokenHelper.ts is a helper file that contains functions to generate and verify access and refresh tokens. This file is used in the auth.middleware.ts file to generate and verify tokens for authentication.
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 const generateRefreshToken = (obj: { userId: string }) => {
     return jwt.sign({ ...obj }, process.env.REFRESH_TOKEN_SECRET!, {

@@ -30,6 +30,7 @@ model User {
   Cart      Cart? // one-to-one relation
   AppliedDiscounts UserDiscountUsage[]
 
+PasswordReset PasswordReset[]
   @@index([Email])
 
 }
@@ -47,6 +48,15 @@ model Admin{
 
 }
 
+model PasswordReset{
+  PasswordResetID String @id @default(cuid())
+  UserID String
+  User User @relation(fields: [UserID], references: [UserID])
+  Token String @default(cuid()) @unique
+  Expiry DateTime
+
+  @@index([Token])
+}
 model Address {
   AddressID  String  @id @default(cuid())
   FirstLine  String?

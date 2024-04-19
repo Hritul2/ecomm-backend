@@ -33,3 +33,10 @@ export const loginUserSchema = z
     .strict();
 
 export type LoginUser = z.infer<typeof loginUserSchema>;
+
+// forgot password schema
+export const forgotPasswordSchema = z.object({
+    email: z.string().email(),
+});
+
+export type ForgotPassword = z.infer<typeof forgotPasswordSchema>;
