@@ -197,4 +197,54 @@ const resetPassword = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, null, "Password reset"));
 });
 
-export { registerUser, loginUser, logoutUser, forgotPassword, resetPassword };
+// user Profile
+const userProfile = asyncHandler(async (req, res) => {
+    const userID = req.body.userId;
+    if (!userID) {
+        throw new ApiError(400, "User ID is required");
+    }
+    const user = await prisma.user.findUnique({
+        where: {
+            UserID: userID,
+        },
+    });
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+    const userOrders = await prisma.order.findMany({
+        where: {
+            UserID: userID,
+        },
+    });
+    console.log(`userOrders: ${userOrders}`);
+    const userWislist = await prisma.wishlist.findMany({
+        where: {
+            UserID: userID,
+        },
+    });
+    console.log(`userWishlist: ${userWislist}`);
+    const userAddresses = await prisma.address.findMany({});
+    console.log(`userAddresses: ${userAddresses}`);
+
+    const sanitizedUser = {
+        ...user,
+        ...userOrders,
+        ...userWislist,
+        ...userAddresses,
+        UserID: undefined,
+        Password: undefined,
+        RefreshToken: undefined,
+    };
+    return res
+        .status(200)
+        .json(new ApiResponse(200, sanitizedUser, "User profile"));
+});
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    forgotPassword,
+    resetPassword,
+    userProfile,
+};

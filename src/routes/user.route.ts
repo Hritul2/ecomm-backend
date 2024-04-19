@@ -8,6 +8,7 @@ import {
     logoutUser,
     forgotPassword,
     resetPassword,
+    userProfile,
 } from "../controllers/user.controller";
 
 // Importing authentication middleware
@@ -30,6 +31,9 @@ router.route("/forgot-password").post(forgotPassword); // POST request to send a
 
 // Route to reset password
 router.route("/reset-password/:token").post(resetPassword); // POST request to reset a user's password
+
+// route to get user profile
+router.route("/profile").get(authMiddleware, userProfile);
 
 // Exporting the router for use in other files
 export default router;
