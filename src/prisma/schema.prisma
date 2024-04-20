@@ -118,20 +118,23 @@ model Bill {
 }
 
 model Product {
-  ProductID       String            @id @default(cuid())
-  Name            String
-  Description     String
-  Price           Float
-  Image           String[]
-  Inventory       Int
-  Category        ProductCategory[]
-  BrandID         String
-  Brand           Brand             @relation(fields: [BrandID], references: [BrandID])
-  Reviews         Review[]
-  OrderProducts   OrderProduct[]
-  CartItems       CartItem[]
-  WishlistProduct WishlistProduct[]
+  ProductID     String            @id @default(cuid())
+  Name          String
+  Description   String
+  Price         Float
+  Image         String[]
+  Inventory     Int
+  Category      ProductCategory[]
+  BrandID       String
+  Brand         Brand             @relation(fields: [BrandID], references: [BrandID])
+  Reviews       Review[]
+  OrderProducts OrderProduct[]
+  CartItems     CartItem[]
+
   ProductDiscount ProductDiscount[]
+
+  WishlistID String // Foreign key
+  Wishlist   Wishlist @relation(fields: [WishlistID], references: [WishlistID]) // One-to-many relationship
 
   @@index([Name])
 }
@@ -215,20 +218,10 @@ model Review {
 model Wishlist {
   WishlistID String @id @default(cuid())
 
-  UserID          String            @unique
-  User            User              @relation(fields: [UserID], references: [UserID])
-  WishlistProduct WishlistProduct[]
-}
+  UserID String @unique
+  User   User   @relation(fields: [UserID], references: [UserID])
 
-model WishlistProduct {
-  WishlistID String
-  ProductID  String
-
-  Wishlist Wishlist @relation(fields: [WishlistID], references: [WishlistID])
-  Product  Product  @relation(fields: [ProductID], references: [ProductID])
-  Quantity Int      @default(1)
-
-  @@id([WishlistID, ProductID])
+  Products Product[] // One-to-many relationship
 }
 
 model Discount {
