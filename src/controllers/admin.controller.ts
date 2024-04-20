@@ -121,3 +121,8 @@ export const logoutAdmin = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, null, "Logout successful"));
 });
+
+export const getAllUsers = asyncHandler(async (req, res) => {
+    const users = await prisma.user.findMany();
+    return res.status(200).json(new ApiResponse(200, users, "All Users"));
+});
