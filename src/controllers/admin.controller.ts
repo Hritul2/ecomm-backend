@@ -98,8 +98,26 @@ export const loginAdmin = asyncHandler(async (req, res) => {
 });
 
 // get all adimins
-
 export const getAllAdmins = asyncHandler(async (req, res) => {
     const admins = await prisma.admin.findMany();
     return res.status(200).json(new ApiResponse(200, admins, "All Admins"));
+});
+
+// logoutAdmin
+
+export const logoutAdmin = asyncHandler(async (req, res) => {
+    const { adminID } = req.body;
+    await prisma.admin.update({
+        where: {
+            AdminID: adminID,
+        },
+        data: {
+            RefreshToken: null,
+        },
+    });
+    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken");
+    return res
+        .status(200)
+        .json(new ApiResponse(200, null, "Logout successful"));
 });
