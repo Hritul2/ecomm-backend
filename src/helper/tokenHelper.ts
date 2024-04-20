@@ -2,12 +2,12 @@
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
-const generateRefreshToken = (obj: { userId: string }) => {
+const generateRefreshToken = (obj: { userID: string }) => {
     return jwt.sign({ ...obj }, process.env.REFRESH_TOKEN_SECRET!, {
         expiresIn: "15d",
     });
 };
-const generateAccessToken = (obj: { userId: string; email: string }) => {
+const generateAccessToken = (obj: { userID: string; email: string }) => {
     return jwt.sign({ ...obj }, process.env.ACCESS_TOKEN_SECRET!, {
         expiresIn: "15d",
     });

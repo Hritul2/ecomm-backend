@@ -9,3 +9,9 @@ export const adminRegisterSchema = z.object({
 });
 
 export type AdminRegisterSchemaType = z.infer<typeof adminRegisterSchema>;
+
+export const adminLoginSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(8),
+});
+export type AdminLoginSchemaType = z.infer<typeof adminLoginSchema>;

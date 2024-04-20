@@ -75,10 +75,10 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     const accessToken = generateAccessToken({
-        userId: user.UserID,
+        userID: user.UserID,
         email: user.Email,
     });
-    const refreshToken = generateRefreshToken({ userId: user.UserID });
+    const refreshToken = generateRefreshToken({ userID: user.UserID });
     const hashedRefreshToken = await hashPassword(refreshToken);
 
     await prisma.user.update({
@@ -105,14 +105,14 @@ const loginUser = asyncHandler(async (req, res) => {
 // Logout user
 const logoutUser = asyncHandler(async (req, res) => {
     try {
-        const { userId } = req.body;
-        if (!userId) {
+        const { userID } = req.body;
+        if (!userID) {
             throw new ApiError(400, "User ID is required");
         }
 
         await prisma.user.update({
             where: {
-                UserID: userId,
+                UserID: userID,
             },
             data: {
                 RefreshToken: null,
@@ -199,13 +199,13 @@ const resetPassword = asyncHandler(async (req, res) => {
 
 // delete user profile
 const deleteUserProfile = asyncHandler(async (req, res) => {
-    const userId = req.body.userId;
-    if (!userId) {
+    const userID = req.body.userID;
+    if (!userID) {
         throw new ApiError(400, "User ID is required");
     }
     const user = await prisma.user.delete({
         where: {
-            UserID: userId,
+            UserID: userID,
         },
     });
 
@@ -216,7 +216,7 @@ const deleteUserProfile = asyncHandler(async (req, res) => {
 
 // user Profile
 const userProfile = asyncHandler(async (req, res) => {
-    const userID = req.body.userId;
+    const userID = req.body.userID;
     if (!userID) {
         throw new ApiError(400, "User ID is required");
     }
@@ -259,7 +259,7 @@ const userProfile = asyncHandler(async (req, res) => {
 
 // user orders
 const userOrders = asyncHandler(async (req, res) => {
-    const userID = req.body.userId;
+    const userID = req.body.userID;
     if (!userID) {
         throw new ApiError(400, "User ID is required");
     }
@@ -277,7 +277,7 @@ const userOrders = asyncHandler(async (req, res) => {
 
 // get user wishlist
 const getUserWishlist = asyncHandler(async (req, res) => {
-    const userID = req.body.userId;
+    const userID = req.body.userID;
     if (!userID) {
         throw new ApiError(400, "User ID is required");
     }
