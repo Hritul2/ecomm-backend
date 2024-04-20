@@ -9,64 +9,63 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"//"postgresql"
+  provider = "postgresql" //"postgresql"
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  UserID    String    @id @default(cuid())
-  Email     String    @unique
-  Password  String
-  FirstName String
-  LastName  String?
-  RefreshToken String? 
+  UserID       String  @id @default(cuid())
+  Email        String  @unique
+  Password     String
+  FirstName    String
+  LastName     String?
+  RefreshToken String?
 
-  Address   Address[] // one-to-many relation
-  Bill      Bill[] // one-to-many relation
-  Orders    Order[] // one-to-many relation
-  Reviews   Review[] // one-to-many relation
-  Wishlist  Wishlist? // one-to-one relation
-  Cart      Cart? // one-to-one relation
+  Address          Address[] // one-to-many relation
+  Bill             Bill[] // one-to-many relation
+  Orders           Order[] // one-to-many relation
+  Reviews          Review[] // one-to-many relation
+  Wishlist         Wishlist? // one-to-one relation
+  Cart             Cart? // one-to-one relation
   AppliedDiscounts UserDiscountUsage[]
 
-PasswordReset PasswordReset[]
-  @@index([Email])
+  PasswordReset PasswordReset[]
 
+  @@index([Email])
 }
 
-model Admin{
-  AdminID String @id @default(cuid())
-  Email String @unique
-  Password String
-  PhoneNumber String
-  FirstName String
-  LastName String
+model Admin {
+  AdminID      String  @id @default(cuid())
+  Email        String  @unique
+  Password     String
+  PhoneNumber  String  @unique
+  FirstName    String
+  LastName     String
   RefreshToken String?
 
   @@index([Email])
-
 }
 
-model PasswordReset{
-  PasswordResetID String @id @default(cuid())
-  UserID String
-  User User @relation(fields: [UserID], references: [UserID])
-  Token String @default(cuid()) @unique
-  Expiry DateTime
+model PasswordReset {
+  PasswordResetID String   @id @default(cuid())
+  UserID          String
+  User            User     @relation(fields: [UserID], references: [UserID])
+  Token           String   @unique @default(cuid())
+  Expiry          DateTime
 
   @@index([Token])
 }
+
 model Address {
-  AddressID  String  @id @default(cuid())
-  FirstLine  String?
-  SecondLine String?
-  Street     String?
-  City       String
-  State      String
-  Country    String  @default("India")
-  Pincode    Int
-  AddressFor String
+  AddressID      String  @id @default(cuid())
+  FirstLine      String?
+  SecondLine     String?
+  Street         String?
+  City           String
+  State          String
+  Country        String  @default("India")
+  Pincode        Int
+  AddressFor     String
   DelliveryPhone String
 
   UserID String
@@ -93,7 +92,7 @@ model Order {
   DestinationAddress   Address @relation(fields: [DestinationAddressID], references: [AddressID])
 
   BillID String @unique
-  Bill   Bill  @relation(fields: [BillID], references: [BillID])
+  Bill   Bill   @relation(fields: [BillID], references: [BillID])
 
   @@unique([OrderID])
   @@index([OrderID, UserID])
@@ -113,7 +112,6 @@ model Bill {
 
   Order Order?
 
-
   DiscountHistory DiscountHistory[]
 
   @@index([UserID])
@@ -132,7 +130,7 @@ model Product {
   Reviews         Review[]
   OrderProducts   OrderProduct[]
   CartItems       CartItem[]
-  Wishlist        Wishlist[]
+  WishlistProduct WishlistProduct[]
   ProductDiscount ProductDiscount[]
 
   @@index([Name])
@@ -217,22 +215,33 @@ model Review {
 model Wishlist {
   WishlistID String @id @default(cuid())
 
-  UserID   String    @unique
-  User     User      @relation(fields: [UserID], references: [UserID])
-  Products Product[]
+  UserID          String            @unique
+  User            User              @relation(fields: [UserID], references: [UserID])
+  WishlistProduct WishlistProduct[]
+}
+
+model WishlistProduct {
+  WishlistID String
+  ProductID  String
+
+  Wishlist Wishlist @relation(fields: [WishlistID], references: [WishlistID])
+  Product  Product  @relation(fields: [ProductID], references: [ProductID])
+  Quantity Int      @default(1)
+
+  @@id([WishlistID, ProductID])
 }
 
 model Discount {
-  DiscountID  String             @id @default(cuid())
-  Code        String             @unique
-  Description String
-  Percentage  Float
-  StartDate   DateTime
-  EndDate     DateTime
-  Products    ProductDiscount[]
-  Categories  CategoryDiscount[]
-  Brand       BrandDiscount[]
-  AppliedUsers UserDiscountUsage[]
+  DiscountID      String              @id @default(cuid())
+  Code            String              @unique
+  Description     String
+  Percentage      Float
+  StartDate       DateTime
+  EndDate         DateTime
+  Products        ProductDiscount[]
+  Categories      CategoryDiscount[]
+  Brand           BrandDiscount[]
+  AppliedUsers    UserDiscountUsage[]
   DiscountHistory DiscountHistory[]
 
   @@index([Code])
@@ -274,13 +283,12 @@ model BrandDiscount {
   @@unique([BrandID, DiscountID])
 }
 
-
 model UserDiscountUsage {
   UserDiscountUsageID String @id @default(cuid())
-  
+
   UserID String
   User   User   @relation(fields: [UserID], references: [UserID])
-  
+
   DiscountID String
   Discount   Discount @relation(fields: [DiscountID], references: [DiscountID])
 
@@ -289,16 +297,15 @@ model UserDiscountUsage {
   @@unique([UserID, DiscountID])
 }
 
-
 model DiscountHistory {
-  DiscountHistoryID String @id @default(cuid())
+  DiscountHistoryID String   @id @default(cuid())
   DiscountCode      String
   DiscountAmount    Float
   AppliedDate       DateTime
 
-  BillID    String
-  Bill      Bill     @relation(fields: [BillID], references: [BillID])
-  
+  BillID String
+  Bill   Bill   @relation(fields: [BillID], references: [BillID])
+
   DiscountID String
   Discount   Discount @relation(fields: [DiscountID], references: [DiscountID])
 }

@@ -45,6 +45,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const sanitizedUser = {
         ...newUser,
         Password: undefined,
+        UserID: undefined,
     };
 
     return res
@@ -127,7 +128,6 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 // forgotPassword
-
 const forgotPassword = asyncHandler(async (req, res) => {
     // fetch data from request body
 
@@ -150,6 +150,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
             Expiry: new Date(Date.now() + 3600000),
         },
     });
+
     const token = passwordResetToken.Token;
     // const resetLink = `http://localhost:8001/api/users/reset-password/${token}`;
     const resetLink = `${req.protocol}://${req.get("host")}/api/users/reset-password/${token}`;
@@ -167,7 +168,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
 });
 
 // resetPassword
-
 const resetPassword = asyncHandler(async (req, res) => {
     console.log("reset password");
     const { token } = req.params;
@@ -195,6 +195,23 @@ const resetPassword = asyncHandler(async (req, res) => {
         where: { PasswordResetID: resetToken.PasswordResetID },
     });
     return res.status(200).json(new ApiResponse(200, null, "Password reset"));
+});
+
+// delete user profile
+const deleteUserProfile = asyncHandler(async (req, res) => {
+    const userId = req.body.userId;
+    if (!userId) {
+        throw new ApiError(400, "User ID is required");
+    }
+    const user = await prisma.user.delete({
+        where: {
+            UserID: userId,
+        },
+    });
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, null, "User profile deleted"));
 });
 
 // user Profile
@@ -240,6 +257,49 @@ const userProfile = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, sanitizedUser, "User profile"));
 });
 
+// user orders
+const userOrders = asyncHandler(async (req, res) => {
+    const userID = req.body.userId;
+    if (!userID) {
+        throw new ApiError(400, "User ID is required");
+    }
+    const userOrders = await prisma.order.findMany({
+        where: {
+            UserID: userID,
+        },
+    });
+    return res
+        .status(200)
+        .json(new ApiResponse(200, userOrders, "User orders"));
+});
+
+// user put item to wishlist
+
+// get user wishlist
+const getUserWishlist = asyncHandler(async (req, res) => {
+    const userID = req.body.userId;
+    if (!userID) {
+        throw new ApiError(400, "User ID is required");
+    }
+    const user = await prisma.user.findUnique({
+        where: { UserID: userID },
+        include: {
+            Wishlist: {
+                include: {
+                    WishlistProduct: true,
+                },
+            },
+        },
+    });
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user.Wishlist, "User wishlist"));
+});
+// delete item from user wishList
+
 export {
     registerUser,
     loginUser,
@@ -247,4 +307,7 @@ export {
     forgotPassword,
     resetPassword,
     userProfile,
+    userOrders,
+    getUserWishlist,
+    deleteUserProfile,
 };

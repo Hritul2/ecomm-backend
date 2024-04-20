@@ -5,9 +5,32 @@ CREATE TABLE "User" (
     "Password" TEXT NOT NULL,
     "FirstName" TEXT NOT NULL,
     "LastName" TEXT,
-    "isAdmin" BOOLEAN NOT NULL DEFAULT false,
+    "RefreshToken" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("UserID")
+);
+
+-- CreateTable
+CREATE TABLE "Admin" (
+    "AdminID" TEXT NOT NULL,
+    "Email" TEXT NOT NULL,
+    "Password" TEXT NOT NULL,
+    "PhoneNumber" TEXT NOT NULL,
+    "FirstName" TEXT NOT NULL,
+    "LastName" TEXT NOT NULL,
+    "RefreshToken" TEXT,
+
+    CONSTRAINT "Admin_pkey" PRIMARY KEY ("AdminID")
+);
+
+-- CreateTable
+CREATE TABLE "PasswordReset" (
+    "PasswordResetID" TEXT NOT NULL,
+    "UserID" TEXT NOT NULL,
+    "Token" TEXT NOT NULL,
+    "Expiry" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PasswordReset_pkey" PRIMARY KEY ("PasswordResetID")
 );
 
 -- CreateTable
@@ -139,6 +162,15 @@ CREATE TABLE "Wishlist" (
 );
 
 -- CreateTable
+CREATE TABLE "WishlistProduct" (
+    "WishlistID" TEXT NOT NULL,
+    "ProductID" TEXT NOT NULL,
+    "Quantity" INTEGER NOT NULL DEFAULT 1,
+
+    CONSTRAINT "WishlistProduct_pkey" PRIMARY KEY ("WishlistID","ProductID")
+);
+
+-- CreateTable
 CREATE TABLE "Discount" (
     "DiscountID" TEXT NOT NULL,
     "Code" TEXT NOT NULL,
@@ -199,17 +231,23 @@ CREATE TABLE "DiscountHistory" (
     CONSTRAINT "DiscountHistory_pkey" PRIMARY KEY ("DiscountHistoryID")
 );
 
--- CreateTable
-CREATE TABLE "_ProductToWishlist" (
-    "A" TEXT NOT NULL,
-    "B" TEXT NOT NULL
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "User_Email_key" ON "User"("Email");
 
 -- CreateIndex
 CREATE INDEX "User_Email_idx" ON "User"("Email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Admin_Email_key" ON "Admin"("Email");
+
+-- CreateIndex
+CREATE INDEX "Admin_Email_idx" ON "Admin"("Email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PasswordReset_Token_key" ON "PasswordReset"("Token");
+
+-- CreateIndex
+CREATE INDEX "PasswordReset_Token_idx" ON "PasswordReset"("Token");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Address_UserID_key" ON "Address"("UserID");
@@ -262,11 +300,8 @@ CREATE UNIQUE INDEX "BrandDiscount_BrandID_DiscountID_key" ON "BrandDiscount"("B
 -- CreateIndex
 CREATE UNIQUE INDEX "UserDiscountUsage_UserID_DiscountID_key" ON "UserDiscountUsage"("UserID", "DiscountID");
 
--- CreateIndex
-CREATE UNIQUE INDEX "_ProductToWishlist_AB_unique" ON "_ProductToWishlist"("A", "B");
-
--- CreateIndex
-CREATE INDEX "_ProductToWishlist_B_index" ON "_ProductToWishlist"("B");
+-- AddForeignKey
+ALTER TABLE "PasswordReset" ADD CONSTRAINT "PasswordReset_UserID_fkey" FOREIGN KEY ("UserID") REFERENCES "User"("UserID") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Address" ADD CONSTRAINT "Address_UserID_fkey" FOREIGN KEY ("UserID") REFERENCES "User"("UserID") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -320,6 +355,12 @@ ALTER TABLE "Review" ADD CONSTRAINT "Review_ProductID_fkey" FOREIGN KEY ("Produc
 ALTER TABLE "Wishlist" ADD CONSTRAINT "Wishlist_UserID_fkey" FOREIGN KEY ("UserID") REFERENCES "User"("UserID") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "WishlistProduct" ADD CONSTRAINT "WishlistProduct_WishlistID_fkey" FOREIGN KEY ("WishlistID") REFERENCES "Wishlist"("WishlistID") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "WishlistProduct" ADD CONSTRAINT "WishlistProduct_ProductID_fkey" FOREIGN KEY ("ProductID") REFERENCES "Product"("ProductID") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "CategoryDiscount" ADD CONSTRAINT "CategoryDiscount_CategoryID_fkey" FOREIGN KEY ("CategoryID") REFERENCES "Category"("CategoryID") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -348,9 +389,3 @@ ALTER TABLE "DiscountHistory" ADD CONSTRAINT "DiscountHistory_BillID_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "DiscountHistory" ADD CONSTRAINT "DiscountHistory_DiscountID_fkey" FOREIGN KEY ("DiscountID") REFERENCES "Discount"("DiscountID") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_ProductToWishlist" ADD CONSTRAINT "_ProductToWishlist_A_fkey" FOREIGN KEY ("A") REFERENCES "Product"("ProductID") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_ProductToWishlist" ADD CONSTRAINT "_ProductToWishlist_B_fkey" FOREIGN KEY ("B") REFERENCES "Wishlist"("WishlistID") ON DELETE CASCADE ON UPDATE CASCADE;
