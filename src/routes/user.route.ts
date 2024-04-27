@@ -11,6 +11,8 @@ import {
     userProfile,
     userOrders,
     getUserWishlist,
+    addToWishlist,
+    deleteFromWishlist,
     deleteUserProfile,
 } from "../controllers/user.controller";
 
@@ -46,8 +48,10 @@ router.route("/orders").get(authMiddleware, userOrders);
 
 // route to get user wishlist
 router.route("/wishlist").get(authMiddleware, getUserWishlist);
-
-// route to delete user wishlist
+// route to add product to user wishlist
+router.route("/wishlist").post(authMiddleware, addToWishlist);
+// route to delete product from user wishlist
+router.route("/wishlist").delete(authMiddleware, deleteFromWishlist);
 
 // Exporting the router for use in other files
 export default router;

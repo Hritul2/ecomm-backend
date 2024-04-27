@@ -14,6 +14,8 @@ import {
     adminRegisterSchema,
     AdminRegisterSchemaType,
 } from "../schemas/admin.schema";
+
+import { productSchema, ProductSchemaType } from "../schemas/product.schema";
 // registerAdmin
 
 export const registerAdmin = asyncHandler(async (req, res) => {
@@ -125,4 +127,46 @@ export const logoutAdmin = asyncHandler(async (req, res) => {
 export const getAllUsers = asyncHandler(async (req, res) => {
     const users = await prisma.user.findMany();
     return res.status(200).json(new ApiResponse(200, users, "All Users"));
+});
+
+// create product
+const createProduct = asyncHandler(async (req, res) => {
+    const {
+        name,
+        price,
+        stock,
+        description,
+        categories,
+        brand,
+        images,
+    }: ProductSchemaType = productSchema.parse(req.body);
+
+    const brandExists = await prisma.brand.findUnique({
+        where: {
+            Name: brand.toLowerCase(),
+        },
+    });
+    if (!brandExists) {
+        const newBrand = await prisma.brand.create({
+            data: {
+                Name: brand.toLowerCase(),
+                Description: "",
+            },
+        });
+    }
+});
+// delete product
+// update product
+// get all products
+
+export const addProduct = asyncHandler(async (req, res) => {
+    const {
+        name,
+        price,
+        stock,
+        description,
+        categories,
+        brand,
+        images,
+    }: ProductSchemaType = productSchema.parse(req.body);
 });

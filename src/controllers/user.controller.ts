@@ -18,6 +18,7 @@ import {
     generateRefreshToken,
 } from "../helper/tokenHelper";
 
+// USER AUTHENTICATION CONTROLLERS
 // Register new user
 const registerUser = asyncHandler(async (req, res) => {
     const { firstName, lastName, email, password }: RegisterUser =
@@ -54,7 +55,6 @@ const registerUser = asyncHandler(async (req, res) => {
             new ApiResponse(201, sanitizedUser, "User registered successfully")
         );
 });
-
 // loginUser
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password }: LoginUser = loginUserSchema.parse(req.body);
@@ -101,7 +101,6 @@ const loginUser = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, null, "Login successful"));
 });
-
 // Logout user
 const logoutUser = asyncHandler(async (req, res) => {
     try {
@@ -126,7 +125,6 @@ const logoutUser = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Internal Server Error");
     }
 });
-
 // forgotPassword
 const forgotPassword = asyncHandler(async (req, res) => {
     // fetch data from request body
@@ -166,8 +164,8 @@ const forgotPassword = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, null, "Password reset email sent"));
 });
-
 // resetPassword
+// TODO: use express-rate-limit to limit the number of requests to this endpoint
 const resetPassword = asyncHandler(async (req, res) => {
     console.log("reset password");
     const { token } = req.params;
@@ -196,7 +194,6 @@ const resetPassword = asyncHandler(async (req, res) => {
     });
     return res.status(200).json(new ApiResponse(200, null, "Password reset"));
 });
-
 // delete user profile
 const deleteUserProfile = asyncHandler(async (req, res) => {
     const userID = req.body.userID;
@@ -214,6 +211,7 @@ const deleteUserProfile = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, null, "User profile deleted"));
 });
 
+// USER PROFILE CONTROLLERS
 // user Profile
 const userProfile = asyncHandler(async (req, res) => {
     const userID = req.body.userID;
@@ -256,7 +254,6 @@ const userProfile = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, sanitizedUser, "User profile"));
 });
-
 // user orders
 const userOrders = asyncHandler(async (req, res) => {
     const userID = req.body.userID;
@@ -272,33 +269,156 @@ const userOrders = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, userOrders, "User orders"));
 });
-
 // user put item to wishlist
-
+const addToWishlist = asyncHandler(async (req, res) => {
+    const { userID, productID } = req.body;
+    // validation
+    if (!userID) {
+        throw new ApiError(400, "User ID is required");
+    }
+    if (!productID) {
+        throw new ApiError(400, "Product ID is required");
+    }
+    // check if product exists
+    const product = await prisma.product.findUnique({
+        where: {
+            ProductID: productID,
+        },
+    });
+    if (!product) {
+        throw new ApiError(404, "Product not found");
+    }
+    // check if user wishlist already exists if not create one
+    let userWishlist = await prisma.wishlist.findUnique({
+        where: {
+            UserID: userID,
+        },
+    });
+    if (!userWishlist) {
+        userWishlist = await prisma.wishlist.create({
+            data: {
+                UserID: userID,
+            },
+        });
+    }
+    // Add the product to the wishlist if it's not already added
+    const productInWishlist = await prisma.wishlist.findFirst({
+        where: {
+            UserID: userID,
+            Products: {
+                some: {
+                    ProductID: productID,
+                },
+            },
+        },
+    });
+    if (productInWishlist) {
+        return res
+            .status(200)
+            .json(new ApiResponse(200, null, "Product already in wishlist"));
+    }
+    const updatedWishlist = await prisma.wishlist.update({
+        where: {
+            WishlistID: userWishlist.WishlistID,
+        },
+        data: {
+            Products: {
+                connect: {
+                    ProductID: productID,
+                },
+            },
+        },
+    });
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, updatedWishlist, "Product added to wishlist")
+        );
+});
 // get user wishlist
 const getUserWishlist = asyncHandler(async (req, res) => {
     const userID = req.body.userID;
     if (!userID) {
         throw new ApiError(400, "User ID is required");
     }
-    const user = await prisma.user.findUnique({
-        where: { UserID: userID },
-        include: {
-            Wishlist: {
-                include: {
-                    WishlistProduct: true,
+    const userWishlist = await prisma.wishlist.findMany({
+        where: {
+            UserID: userID,
+        },
+    });
+    return res
+        .status(200)
+        .json(new ApiResponse(200, userWishlist, "User wishlist"));
+});
+// delete item from user wishList
+const deleteFromWishlist = asyncHandler(async (req, res) => {
+    const { userID, productID } = req.body;
+    // validation
+    if (!userID) {
+        throw new ApiError(400, "User ID is required");
+    }
+    if (!productID) {
+        throw new ApiError(400, "Product ID is required");
+    }
+    // check if product exists
+    const product = await prisma.product.findUnique({
+        where: {
+            ProductID: productID,
+        },
+    });
+    if (!product) {
+        throw new ApiError(404, "Product not found");
+    }
+    // check if user wishlist already exists if not return
+    const userWishlist = await prisma.wishlist.findUnique({
+        where: {
+            UserID: userID,
+        },
+    });
+    if (!userWishlist) {
+        return res
+            .status(200)
+            .json(new ApiResponse(200, null, "Product not in wishlist"));
+    }
+    // check if product is in wishlist
+    const productInWishlist = await prisma.wishlist.findFirst({
+        where: {
+            UserID: userID,
+            Products: {
+                some: {
+                    ProductID: productID,
                 },
             },
         },
     });
-    if (!user) {
-        throw new ApiError(404, "User not found");
+    if (!productInWishlist) {
+        return res
+            .status(200)
+            .json(new ApiResponse(200, null, "Product not in wishlist"));
     }
+    // remove product from wishlist
+    const updatedWishlist = await prisma.wishlist.update({
+        where: {
+            WishlistID: userWishlist.WishlistID,
+        },
+        data: {
+            Products: {
+                disconnect: {
+                    ProductID: productID,
+                },
+            },
+        },
+    });
     return res
         .status(200)
-        .json(new ApiResponse(200, user.Wishlist, "User wishlist"));
+        .json(
+            new ApiResponse(
+                200,
+                updatedWishlist,
+                "Product removed from wishlist"
+            )
+        );
 });
-// delete item from user wishList
 
 export {
     registerUser,
@@ -309,5 +429,7 @@ export {
     userProfile,
     userOrders,
     getUserWishlist,
+    addToWishlist,
+    deleteFromWishlist,
     deleteUserProfile,
 };

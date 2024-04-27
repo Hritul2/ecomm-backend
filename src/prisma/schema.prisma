@@ -192,7 +192,7 @@ model OrderProduct {
 
 model Brand {
   BrandID     String          @id @default(cuid())
-  Name        String
+  Name        String @unique
   Description String
   Products    Product[]
   Discount    BrandDiscount[]
