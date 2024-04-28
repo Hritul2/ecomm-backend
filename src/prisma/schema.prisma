@@ -57,15 +57,15 @@ model PasswordReset {
 }
 
 model Address {
-  AddressID      String  @id @default(cuid())
-  FirstLine      String
-  SecondLine     String?
-  Street         String?
-  City           String
-  State          String
-  Country        String  @default("India")
-  Pincode        String
-  AddressFor     String
+  AddressID     String  @id @default(cuid())
+  FirstLine     String
+  SecondLine    String?
+  Street        String?
+  City          String
+  State         String
+  Country       String  @default("India")
+  Pincode       String
+  AddressFor    String
   DeliveryPhone String
 
   UserID String
@@ -118,20 +118,26 @@ model Bill {
 }
 
 model Product {
-  ProductID     String            @id @default(cuid())
+  ProductID     Int               @id @default(autoincrement())
   Name          String
   Description   String
   Price         Float
   Image         String[]
   Inventory     Int
   Category      ProductCategory[]
-  BrandID       String
+  BrandID       Int
   Brand         Brand             @relation(fields: [BrandID], references: [BrandID])
   Reviews       Review[]
   OrderProducts OrderProduct[]
   CartItems     CartItem[]
 
   ProductDiscount ProductDiscount[]
+
+  DateAdded   DateTime
+  DateUpdated DateTime
+
+  Featured Boolean @default(false)
+  Recommended Boolean @default(false)
 
   WishlistID String // Foreign key
   Wishlist   Wishlist @relation(fields: [WishlistID], references: [WishlistID]) // One-to-many relationship
@@ -155,14 +161,14 @@ model CartItem {
   CartID String
   Cart   Cart   @relation(fields: [CartID], references: [CartID])
 
-  ProductID String
+  ProductID Int
   Product   Product @relation(fields: [ProductID], references: [ProductID])
 
   Quantity Int
 }
 
 model Category {
-  CategoryID  String             @id @default(cuid())
+  CategoryID  Int                @id @default(autoincrement())
   Name        String
   Description String
   Products    ProductCategory[]
@@ -172,8 +178,8 @@ model Category {
 }
 
 model ProductCategory {
-  ProductID  String
-  CategoryID String
+  ProductID  Int
+  CategoryID Int
 
   Product  Product  @relation(fields: [ProductID], references: [ProductID])
   Category Category @relation(fields: [CategoryID], references: [CategoryID])
@@ -183,7 +189,7 @@ model ProductCategory {
 
 model OrderProduct {
   OrderID   String
-  ProductID String
+  ProductID Int
   Order     Order   @relation(fields: [OrderID], references: [OrderID])
   Product   Product @relation(fields: [ProductID], references: [ProductID])
 
@@ -191,8 +197,8 @@ model OrderProduct {
 }
 
 model Brand {
-  BrandID     String          @id @default(cuid())
-  Name        String @unique
+  BrandID     Int             @id @default(autoincrement())
+  Name        String          @unique
   Description String
   Products    Product[]
   Discount    BrandDiscount[]
@@ -202,7 +208,7 @@ model Brand {
 
 model Review {
   ReviewID  String   @id @default(cuid())
-  ProductID String
+  ProductID Int
   Rating    Int
   Review    String
   Date      DateTime
@@ -243,7 +249,7 @@ model Discount {
 model CategoryDiscount {
   CategoryDiscountID String @id @default(cuid())
 
-  CategoryID String
+  CategoryID Int
   Category   Category @relation(fields: [CategoryID], references: [CategoryID])
 
   DiscountID String
@@ -255,7 +261,7 @@ model CategoryDiscount {
 model ProductDiscount {
   ProductDiscountID String @id @default(cuid())
 
-  ProductID String
+  ProductID Int
   Product   Product @relation(fields: [ProductID], references: [ProductID])
 
   DiscountID String
@@ -267,8 +273,8 @@ model ProductDiscount {
 model BrandDiscount {
   BrandDiscountID String @id @default(cuid())
 
-  BrandID String
-  Brand   Brand  @relation(fields: [BrandID], references: [BrandID])
+  BrandID Int
+  Brand   Brand @relation(fields: [BrandID], references: [BrandID])
 
   DiscountID String
   Discount   Discount @relation(fields: [DiscountID], references: [DiscountID])
