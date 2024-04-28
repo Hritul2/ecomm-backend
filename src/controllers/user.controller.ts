@@ -12,6 +12,7 @@ import {
     LoginUser,
     ForgotPassword,
 } from "../schemas/user.schema";
+import { AddressSchemaType, addressSchema } from "../schemas/address.schema";
 import { hashPassword, compareHash } from "../helper/hashPassword";
 import {
     generateAccessToken,
@@ -19,7 +20,6 @@ import {
 } from "../helper/tokenHelper";
 
 // USER AUTHENTICATION CONTROLLERS
-// Register new user
 const registerUser = asyncHandler(async (req, res) => {
     const { firstName, lastName, email, password }: RegisterUser =
         registerUserSchema.parse(req.body);
@@ -55,7 +55,6 @@ const registerUser = asyncHandler(async (req, res) => {
             new ApiResponse(201, sanitizedUser, "User registered successfully")
         );
 });
-// loginUser
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password }: LoginUser = loginUserSchema.parse(req.body);
     const user = await prisma.user.findUnique({
@@ -101,7 +100,6 @@ const loginUser = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, null, "Login successful"));
 });
-// Logout user
 const logoutUser = asyncHandler(async (req, res) => {
     try {
         const { userID } = req.body;
@@ -125,7 +123,6 @@ const logoutUser = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Internal Server Error");
     }
 });
-// forgotPassword
 const forgotPassword = asyncHandler(async (req, res) => {
     // fetch data from request body
 
@@ -164,7 +161,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, null, "Password reset email sent"));
 });
-// resetPassword
 // TODO: use express-rate-limit to limit the number of requests to this endpoint
 const resetPassword = asyncHandler(async (req, res) => {
     console.log("reset password");
@@ -194,7 +190,6 @@ const resetPassword = asyncHandler(async (req, res) => {
     });
     return res.status(200).json(new ApiResponse(200, null, "Password reset"));
 });
-// delete user profile
 const deleteUserProfile = asyncHandler(async (req, res) => {
     const userID = req.body.userID;
     if (!userID) {
@@ -212,7 +207,6 @@ const deleteUserProfile = asyncHandler(async (req, res) => {
 });
 
 // USER PROFILE CONTROLLERS
-// user Profile
 const userProfile = asyncHandler(async (req, res) => {
     const userID = req.body.userID;
     if (!userID) {
@@ -254,7 +248,6 @@ const userProfile = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, sanitizedUser, "User profile"));
 });
-// user orders
 const userOrders = asyncHandler(async (req, res) => {
     const userID = req.body.userID;
     if (!userID) {
@@ -269,7 +262,8 @@ const userOrders = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, userOrders, "User orders"));
 });
-// user put item to wishlist
+
+// USER WISHLIST CONTROLLERS
 const addToWishlist = asyncHandler(async (req, res) => {
     const { userID, productID } = req.body;
     // validation
@@ -335,7 +329,6 @@ const addToWishlist = asyncHandler(async (req, res) => {
             new ApiResponse(200, updatedWishlist, "Product added to wishlist")
         );
 });
-// get user wishlist
 const getUserWishlist = asyncHandler(async (req, res) => {
     const userID = req.body.userID;
     if (!userID) {
@@ -350,7 +343,6 @@ const getUserWishlist = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, userWishlist, "User wishlist"));
 });
-// delete item from user wishList
 const deleteFromWishlist = asyncHandler(async (req, res) => {
     const { userID, productID } = req.body;
     // validation
@@ -420,6 +412,68 @@ const deleteFromWishlist = asyncHandler(async (req, res) => {
         );
 });
 
+// USER ADDRESS CONTROLLERS
+const getUserAddresses = asyncHandler(async (req, res) => {
+    console.log("get user addresses");
+    const { userID } = req.body;
+    if (!userID) {
+        throw new ApiError(400, "User ID is required");
+    }
+    const userAddresses = await prisma.address.findMany({
+        where: {
+            UserID: userID,
+        },
+    });
+    return res
+        .status(200)
+        .json(new ApiResponse(200, userAddresses, "User addresses"));
+});
+
+const addUserAddress = asyncHandler(async (req, res) => {
+    const { userID, address }: { userID: string; address: AddressSchemaType } =
+        req.body;
+    if (!userID) {
+        throw new ApiError(400, "User ID is required");
+    }
+    const user = await prisma.user.findUnique({
+        where: {
+            UserID: userID,
+        },
+    });
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    const {
+        firstLine,
+        secondLine,
+        street,
+        city,
+        state,
+        country,
+        pinconde,
+        addressFor,
+        deliveryPhone,
+    }: AddressSchemaType = addressSchema.parse(address);
+
+    const newAddress = await prisma.address.create({
+        data: {
+            FirstLine: firstLine,
+            SecondLine: secondLine,
+            Street: street,
+            City: city,
+            State: state,
+            Country: country,
+            Pincode: pinconde,
+            AddressFor: addressFor,
+            DelliveryPhone: deliveryPhone,
+            UserID: userID,
+        },
+    });
+    return res
+        .status(201)
+        .json(new ApiResponse(201, newAddress, "Address added"));
+});
 export {
     registerUser,
     loginUser,
@@ -432,4 +486,6 @@ export {
     addToWishlist,
     deleteFromWishlist,
     deleteUserProfile,
+    getUserAddresses,
+    addUserAddress,
 };
