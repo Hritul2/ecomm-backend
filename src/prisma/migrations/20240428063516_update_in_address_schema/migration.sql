@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Address" ALTER COLUMN "Pincode" SET DATA TYPE TEXT;

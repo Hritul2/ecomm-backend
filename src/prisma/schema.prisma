@@ -58,15 +58,15 @@ model PasswordReset {
 
 model Address {
   AddressID      String  @id @default(cuid())
-  FirstLine      String?
+  FirstLine      String
   SecondLine     String?
   Street         String?
   City           String
   State          String
   Country        String  @default("India")
-  Pincode        Int
+  Pincode        String
   AddressFor     String
-  DelliveryPhone String
+  DeliveryPhone String
 
   UserID String
   User   User   @relation(fields: [UserID], references: [UserID]) // many-to-one relation

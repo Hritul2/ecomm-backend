@@ -424,14 +424,29 @@ const getUserAddresses = asyncHandler(async (req, res) => {
             UserID: userID,
         },
     });
+    const sanitizedUserAddresses = userAddresses.map((address) => {
+        return {
+            ...address,
+            AddressID: undefined,
+        };
+    });
     return res
         .status(200)
         .json(new ApiResponse(200, userAddresses, "User addresses"));
 });
-
 const addUserAddress = asyncHandler(async (req, res) => {
-    const { userID, address }: { userID: string; address: AddressSchemaType } =
-        req.body;
+    const { userID }: { userID: string } = req.body;
+    const {
+        firstLine,
+        secondLine,
+        street,
+        city,
+        state,
+        country,
+        pincode,
+        addressFor,
+        deliveryPhone,
+    }: AddressSchemaType = addressSchema.parse(req.body);
     if (!userID) {
         throw new ApiError(400, "User ID is required");
     }
@@ -444,19 +459,7 @@ const addUserAddress = asyncHandler(async (req, res) => {
         throw new ApiError(404, "User not found");
     }
 
-    const {
-        firstLine,
-        secondLine,
-        street,
-        city,
-        state,
-        country,
-        pinconde,
-        addressFor,
-        deliveryPhone,
-    }: AddressSchemaType = addressSchema.parse(address);
-
-    const newAddress = await prisma.address.create({
+    const usersNewAddress = await prisma.address.create({
         data: {
             FirstLine: firstLine,
             SecondLine: secondLine,
@@ -464,16 +467,121 @@ const addUserAddress = asyncHandler(async (req, res) => {
             City: city,
             State: state,
             Country: country,
-            Pincode: pinconde,
+            Pincode: pincode,
             AddressFor: addressFor,
-            DelliveryPhone: deliveryPhone,
+            DeliveryPhone: deliveryPhone,
             UserID: userID,
         },
     });
+    const sanitizedUserAddress = {
+        ...usersNewAddress,
+        AddressID: undefined,
+    };
     return res
         .status(201)
-        .json(new ApiResponse(201, newAddress, "Address added"));
+        .json(new ApiResponse(201, sanitizedUserAddress, "Address added"));
 });
+const updateUserAddress = asyncHandler(async (req, res) => {
+    const { userID } = req.body;
+    if (!userID) {
+        throw new ApiError(400, "User ID is required");
+    }
+    const user = await prisma.user.findUnique({
+        where: {
+            UserID: userID,
+        },
+    });
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+    const {
+        firstLine,
+        secondLine,
+        street,
+        city,
+        state,
+        country,
+        pincode,
+        addressFor,
+        deliveryPhone,
+    }: AddressSchemaType = addressSchema.parse(req.body);
+    const { addressID } = req.body;
+    if (!addressID) {
+        throw new ApiError(400, "Address ID is required");
+    }
+    const address = await prisma.address.findUnique({
+        where: {
+            AddressID: addressID,
+        },
+    });
+    if (!address) {
+        throw new ApiError(404, "Address not found");
+    }
+    if (address.UserID !== userID) {
+        throw new ApiError(
+            403,
+            "You are not authorized to update this address"
+        );
+    }
+    const updatedAddress = await prisma.address.update({
+        where: {
+            AddressID: addressID,
+        },
+        data: {
+            FirstLine: firstLine,
+            SecondLine: secondLine,
+            Street: street,
+            City: city,
+            State: state,
+            Country: country,
+            Pincode: pincode,
+            AddressFor: addressFor,
+            DeliveryPhone: deliveryPhone,
+        },
+    });
+    return res
+        .status(200)
+        .json(new ApiResponse(200, updatedAddress, "Address updated"));
+});
+
+const deleteUserAddress = asyncHandler(async (req, res) => {
+    const { userID } = req.body;
+    if (!userID) {
+        throw new ApiError(400, "User ID is required");
+    }
+    const user = await prisma.user.findUnique({
+        where: {
+            UserID: userID,
+        },
+    });
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    const { addressID } = req.body;
+    if (!addressID) {
+        throw new ApiError(400, "Address ID is required");
+    }
+    // Validate if addressID and userID belong to the same person
+    const address = await prisma.address.findUnique({
+        where: {
+            AddressID: addressID,
+        },
+    });
+    if (!address) {
+        throw new ApiError(404, "Address not found");
+    }
+    if (address.UserID !== userID) {
+        throw new ApiError(403, "Address does not belong to the user");
+    }
+    const deletedAddress = await prisma.address.delete({
+        where: {
+            AddressID: addressID,
+        },
+    });
+    return res.status(200).json(new ApiResponse(200, null, "Address deleted"));
+});
+
 export {
     registerUser,
     loginUser,
@@ -488,4 +596,6 @@ export {
     deleteUserProfile,
     getUserAddresses,
     addUserAddress,
+    updateUserAddress,
+    deleteUserAddress,
 };

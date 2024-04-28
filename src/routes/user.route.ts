@@ -16,6 +16,8 @@ import {
     deleteUserProfile,
     getUserAddresses,
     addUserAddress,
+    updateUserAddress,
+    deleteUserAddress,
 } from "../controllers/user.controller";
 
 // Importing authentication middleware
@@ -44,6 +46,8 @@ router.route("/wishlist").delete(authMiddleware, deleteFromWishlist); // DELETE 
 // USER ADDRESS ROUTES
 router.route("/address").get(authMiddleware, getUserAddresses); // GET request to get user addresses
 router.route("/address").post(authMiddleware, addUserAddress); // POST request to add a new address
+router.route("/address").put(authMiddleware, updateUserAddress); // PUT request to update an address
+router.route("/address").delete(authMiddleware, deleteUserAddress); // DELETE request to delete an address
 
 // Exporting the router for use in other files
 export default router;
