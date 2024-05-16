@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { prisma } from "../config/db.config";
 import { calculateAvgRating } from "../helper/product.helper";
+import { ProductFilterSchemaType } from "../schemas/product.schema";
 
 // PRODUCTS
 const getAllProducts = asyncHandler(async (req, res) => {
@@ -27,22 +28,32 @@ const getProductById = asyncHandler(async (req, res) => {
         .json(new ApiResponse(201, product, "Product fetched successfully"));
 });
 const getProductByCategoryName = asyncHandler(async (req, res) => {
-    const { catName } = req.params;
-    // check if category exists
-    const category = await prisma.category.findFirst({
-        where: { Name: catName.toLowerCase() },
+    // get categories from request query parameters
+    const { catNames } = req.query;
+    // convert category names to lowercase and split into an array
+    const categoryNames = (catNames as string).toLowerCase().split(",");
+    // find categories by name
+    const categories = await prisma.category.findMany({
+        where: {
+            Name: {
+                in: categoryNames,
+            },
+        },
     });
-    // if category does not exist, return 404
-    if (!category) {
-        throw new ApiError(404, "Category not found");
+    // if categories do not exist, return 404
+    if (categories.length === 0) {
+        throw new ApiError(404, "Categories not found");
     }
-    // get products by category
-    const productsOfCategory = await prisma.category.findFirst({
-        where: { CategoryID: category.CategoryID },
+    // get products by categories
+    const productsOfCategories = await prisma.category.findMany({
+        where: {
+            CategoryID: {
+                in: categories.map((category) => category.CategoryID),
+            },
+        },
         select: { Products: true },
     });
-
-    if (!productsOfCategory) {
+    if (!productsOfCategories) {
         throw new ApiError(404, "Products not found");
     }
     return res
@@ -50,7 +61,7 @@ const getProductByCategoryName = asyncHandler(async (req, res) => {
         .json(
             new ApiResponse(
                 201,
-                productsOfCategory,
+                productsOfCategories,
                 "Products fetched successfully"
             )
         );
@@ -141,16 +152,15 @@ const getProductByPriceRange = asyncHandler(async (req, res) => {
         .status(201)
         .json(new ApiResponse(201, products, "Products fetched successfully"));
 });
-const getProductByRating = asyncHandler(async (req, res) => {
-    const { rating } = req.params;
+const getProductByRatingRange = asyncHandler(async (req, res) => {
+    const { minRating, maxRating } = req.params;
     // get products by rating
     const products = await prisma.product.findMany({
         where: {
-            Reviews: {
-                some: {
-                    Rating: parseInt(rating),
-                },
-            },
+            AND: [
+                { AvgRating: { gte: parseInt(minRating) } },
+                { AvgRating: { lte: parseInt(maxRating) } },
+            ],
         },
     });
     if (!products) {
@@ -337,19 +347,142 @@ const getAllCategories = asyncHandler(async (req, res) => {
             new ApiResponse(201, categories, "Categories fetched successfully")
         );
 });
-const getCategoryByName = asyncHandler(async (req, res) => {
-    const { name } = req.params;
-    const category = await prisma.category.findMany({
-        where: { Name: name.toLowerCase() },
+
+// BRAND
+const getAllBrands = asyncHandler(async (req, res) => {
+    const brands = await prisma.brand.findMany();
+
+    return res
+        .status(201)
+        .json(new ApiResponse(201, brands, "Brands fetched successfully"));
+});
+
+// REVIEW
+const getProductReviews = asyncHandler(async (req, res) => {
+    const { prodId } = req.params;
+    const product = await prisma.product.findUnique({
+        where: { ProductID: parseInt(prodId) },
+        include: { Reviews: true },
     });
 
-    if (!category) {
-        throw new ApiError(404, "Category not found");
+    if (!product) {
+        throw new ApiError(404, "Product not found");
     }
 
     return res
         .status(201)
-        .json(new ApiResponse(201, category, "Category fetched successfully"));
+        .json(
+            new ApiResponse(
+                201,
+                product.Reviews,
+                "Product reviews fetched successfully"
+            )
+        );
 });
 
-export { getAllProducts, getProductById };
+// FILTERS
+const getProductByFilter = asyncHandler(async (req, res) => {
+    const {
+        categoryIds,
+        brandIds,
+        minPrice,
+        maxPrice,
+        minRating,
+        maxRating,
+        searchQuery,
+        minDiscount,
+        maxDiscount,
+        brandName,
+    }: ProductFilterSchemaType = req.query;
+
+    let filters: any = {};
+
+    if (categoryIds) {
+        filters.CategoryID = {
+            in: categoryIds.split(","),
+        };
+    }
+
+    if (brandIds) {
+        filters.BrandID = {
+            in: brandIds.split(","),
+        };
+    }
+
+    if (minPrice && maxPrice) {
+        filters.Price = {
+            gte: parseInt(minPrice),
+            lte: parseInt(maxPrice),
+        };
+    }
+    if (minRating && maxRating) {
+        filters.AvgRating = {
+            gte: parseInt(minRating),
+            lte: parseInt(maxRating),
+        };
+    }
+    if (minDiscount && maxDiscount) {
+        filters.Discount = {
+            gte: parseInt(minDiscount),
+            lte: parseInt(maxDiscount),
+        };
+    }
+    if (searchQuery) {
+        filters.OR = [
+            { Name: { contains: searchQuery, mode: "insensitive" } },
+            { Description: { contains: searchQuery, mode: "insensitive" } },
+        ];
+    }
+
+    if (brandName) {
+        const brand = await prisma.brand.findFirst({
+            where: {
+                Name: brandName.toLowerCase(),
+            },
+        });
+        if (!brand) {
+            throw new ApiError(404, "Brand not found");
+        }
+        filters.BrandID = brand.BrandID;
+    }
+    const products = await prisma.product.findMany({
+        where: filters,
+    });
+
+    if (!products || products.length === 0) {
+        throw new ApiError(404, "Products not found");
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                products,
+                "Products fetched successfully with applied filters"
+            )
+        );
+});
+
+// EXPORTS
+export {
+    getAllProducts,
+    getProductById,
+    getAllBrands,
+    getAllCategories,
+    getProductByCategoryName,
+    getProductByCategoryID,
+    getProductByBrandName,
+    getProductByBrandID,
+    getProductByPriceRange,
+    getProductByRatingRange,
+    getProductBySearch,
+    getTopRatedProducts,
+    getNewArrivals,
+    getFeaturedProducts,
+    getRecommendedProducts,
+    getRelatedProducts,
+    getProductByDiscount,
+    getProductReviews,
+    getProductByFilter,
+};

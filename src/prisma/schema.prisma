@@ -130,6 +130,8 @@ model Product {
   Reviews       Review[]
   OrderProducts OrderProduct[]
   CartItems     CartItem[]
+  AvgRating     Float
+  NumberOfRatings Int
 
   ProductDiscount ProductDiscount[]
 
