@@ -1,3 +1,12 @@
+# How to Setup the Project
+
+## In your terminal
+
+-   Run `npm i`
+-   create `.env` file by just typing `cp .env.smaple .env`
+-   Update `.env` files with relevant informations
+-   Run `npm run dev`
+
 ## Routes
 
 ### User Authentication:
